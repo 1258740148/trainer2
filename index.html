@@ -126,27 +126,21 @@
             gap: var(--card-gap);
         }
         
-        /* 主题列表 - 响应式网格布局 */
         #theme-list-view .cards-container {
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: 1fr;
         }
         
-        /* 图片列表 - 自适应网格布局 */
         #image-list-view .cards-container {
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
         }
         
-        /* 碎片网格视图 - 仅显示提示 */
         #piece-grid-view .cards-container {
-            display: block;
-            padding: 2rem;
-            text-align: center;
-            color: #666;
+            grid-template-columns: repeat(3, 1fr);
         }
         
-        /* 全局碎片视图 */
+        /* === 新增：全局碎片视图 === */
         #global-piece-view .cards-container {
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
         }
         
         /* === 卡片通用样式 === */
@@ -173,28 +167,15 @@
             gap: 1.5rem;
         }
         
-        /* 为主题添加不同颜色 */
-        .theme-card[data-theme-id="1"] .theme-thumbnail {
-            background: linear-gradient(135deg, #4a6fa5, #6a93d8);
-        }
-        .theme-card[data-theme-id="2"] .theme-thumbnail {
-            background: linear-gradient(135deg, #4caf50, #8bc34a);
-        }
-        .theme-card[data-theme-id="3"] .theme-thumbnail {
-            background: linear-gradient(135deg, #ff9800, #ffb74d);
-        }
-        .theme-card[data-theme-id="4"] .theme-thumbnail {
-            background: linear-gradient(135deg, #9c27b0, #ba68c8);
-        }
-        
         .theme-thumbnail {
-            width: 60px;
-            height: 60px;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), #6a93d8);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: bold;
             color: white;
             flex-shrink: 0;
@@ -202,52 +183,24 @@
         
         .theme-info {
             flex-grow: 1;
-            min-width: 0;
         }
         
         .theme-name {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: var(--primary);
-            margin-bottom: 0.3rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            margin-bottom: 0.5rem;
         }
         
         /* === 图片卡片 === */
-        .image-card {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        
         .image-card .card-title {
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             font-weight: bold;
             color: var(--primary);
             margin-bottom: 0.5rem;
-            line-height: 1.3;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            height: 2.6em;
         }
         
-        .image-icon {
-            font-size: 2rem;
-            text-align: center;
-            margin-bottom: 0.5rem;
-        }
-        
-        .image-stats {
-            margin-top: auto;
-            padding-top: 0.5rem;
-            border-top: 1px solid rgba(0,0,0,0.05);
-        }
-        
-        /* === 碎片卡片（仅用于全局视图） === */
+        /* === 碎片卡片 === */
         .piece-card {
             text-align: center;
             min-height: 140px;
@@ -344,7 +297,7 @@
             color: #ccc;
         }
         
-        /* === 左右两等分点击区域（仅用于全局视图） === */
+        /* === 左右两等分点击区域 === */
         .click-zone {
             position: absolute;
             top: 0;
@@ -602,12 +555,42 @@
             align-self: center;
         }
         
-        /* === 移动端响应式设计 === */
-        @media (max-width: 768px) {
-            #theme-list-view .cards-container,
+        /* === 触摸优化样式 === */
+        @media (hover: none) and (pointer: coarse) {
+            /* 触摸设备上，点击区域始终可见 */
+            .piece-card .click-zone {
+                opacity: 0.3;
+            }
+            
+            /* 触摸设备上，按下时高亮 */
+            .piece-card:active .click-zone {
+                opacity: 0.8;
+            }
+            
+            /* 增大触摸目标 */
+            .btn, .filter-btn, .global-filter-btn {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            .card {
+                min-height: 60px;
+            }
+            
+            /* 卡片悬停效果在触摸设备上减弱 */
+            .card:hover {
+                transform: none;
+            }
+        }
+        
+        /* === 响应式设计 === */
+        
+        /* 平板及小屏桌面 */
+        @media (max-width: 1024px) {
             #image-list-view .cards-container,
+            #piece-grid-view .cards-container,
             #global-piece-view .cards-container {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
             }
             
             .theme-card {
@@ -617,31 +600,166 @@
             }
             
             .theme-thumbnail {
-                width: 70px;
-                height: 70px;
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+            
+            .theme-name {
+                font-size: 1.3rem;
+            }
+        }
+        
+        /* 手机 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                max-width: 100%;
+            }
+            
+            header h1 {
+                font-size: 1.5rem;
+            }
+            
+            header p {
+                font-size: 0.9rem;
+            }
+            
+            .global-filters, .data-actions {
+                justify-content: center;
+                gap: 0.5rem;
+            }
+            
+            .global-filter-btn, .btn {
+                padding: 0.7rem 1rem;
+                font-size: 0.9rem;
+            }
+            
+            #image-list-view .cards-container,
+            #piece-grid-view .cards-container,
+            #global-piece-view .cards-container {
+                grid-template-columns: 1fr;
             }
             
             .view-header {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 1rem;
+            }
+            
+            .view-header h2 {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .theme-card {
+                padding: 1rem;
+            }
+            
+            .card {
+                padding: 1rem;
+            }
+            
+            /* 批量输入区域响应式 */
+            .batch-input-row {
+                flex-direction: column;
+                align-items: stretch;
             }
             
             .batch-input-field {
-                min-width: 100%;
+                min-width: auto;
+                width: 100%;
             }
             
-            .batch-input-row {
+            .batch-input-label {
+                min-width: auto;
+            }
+            
+            .batch-input-actions {
                 flex-direction: column;
-                align-items: flex-start;
+            }
+            
+            .piece-counts {
+                gap: 1rem;
+            }
+            
+            .count-value {
+                font-size: 1.3rem;
             }
         }
         
-        /* 平板端优化 */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            #image-list-view .cards-container {
-                grid-template-columns: repeat(2, 1fr);
+        /* 小屏幕手机 */
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 1.3rem;
             }
+            
+            .global-filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .global-filter-btn {
+                width: 100%;
+            }
+            
+            .data-actions {
+                flex-direction: column;
+            }
+            
+            .theme-thumbnail {
+                width: 50px;
+                height: 50px;
+                font-size: 1.3rem;
+            }
+            
+            .theme-name {
+                font-size: 1.2rem;
+            }
+            
+            .piece-stars {
+                font-size: 1rem;
+            }
+            
+            .piece-name {
+                font-size: 1rem;
+            }
+        }
+        
+        /* 超小屏幕 */
+        @media (max-width: 360px) {
+            :root {
+                --padding: 8px;
+                --card-gap: 10px;
+            }
+            
+            header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .piece-stars {
+                font-size: 0.9rem;
+                letter-spacing: 1px;
+            }
+            
+            .count-value {
+                font-size: 1.2rem;
+            }
+        }
+        
+        /* 触摸设备按压反馈 */
+        .btn:active, .filter-btn:active, .global-filter-btn:active, .card:active {
+            transform: scale(0.97);
+            transition: transform 0.1s ease;
+        }
+        
+        /* 确保所有触摸目标足够大 */
+        .filter-btn {
+            min-height: 36px;
+            min-width: 36px;
         }
     </style>
 </head>
@@ -669,8 +787,15 @@
             </button>
         </div>
 
-        <!-- 注意：已移除原主题级别的星级筛选器 -->
-        <!-- 保留全局碎片视图的星级筛选器，位置在#global-piece-view的view-header内部 -->
+        <!-- 星级筛选器 -->
+        <div id="star-filters" class="filters hidden">
+            <button class="filter-btn active" data-star="0">全部</button>
+            <button class="filter-btn" data-star="1">★ 1星</button>
+            <button class="filter-btn" data-star="2">★★ 2星</button>
+            <button class="filter-btn" data-star="3">★★★ 3星</button>
+            <button class="filter-btn" data-star="4">★★★★ 4星</button>
+            <button class="filter-btn" data-star="5">★★★★★ 5星</button>
+        </div>
 
         <main>
             <!-- 视图容器 -->
@@ -693,15 +818,13 @@
                                 </svg>
                                 返回主题列表
                             </button>
-                            <div>
                             <span id="current-theme-name">主题名称</span> - 图片列表
-                            <div>
                         </h2>
                     </div>
                     <div class="cards-container"></div>
                 </div>
 
-                <!-- 视图3: 碎片管理 -->
+                <!-- 视图3: 碎片网格 -->
                 <div id="piece-grid-view" class="view hidden">
                     <div class="view-header">
                         <h2>
@@ -711,27 +834,28 @@
                                 </svg>
                                 返回图片列表
                             </button>
-                            <span id="current-image-name">图片名称</span> - 碎片管理
+                            <span id="current-image-name">图片名称</span> - 碎片网格
                         </h2>
                     </div>
                     <div class="cards-container"></div>
-                    <!-- 批量输入区域 -->
+                    <!-- 新增：批量输入区域 -->
                     <div id="batch-input-container" class="batch-input-container">
                         <div class="batch-input-header">
-                            <div class="batch-input-title">批量输入碎片数量：按行从左至右的顺序输入</div>
+                            <div class="batch-input-title">📝 批量输入碎片数量</div>
+                            <div class="batch-input-help">依次输入碎片的拥有数量</div>
                         </div>
                         <div class="batch-input-area">
                             <div class="batch-input-row">
-                                <label for="batch-input" class="batch-input-label">输入已拥有的数量：</label>
-                                <input type="text" id="batch-input" class="batch-input-field" placeholder="例如: 0,1,2,0,0,4,1,0,0,1,0,1">
+                                <label for="batch-input" class="batch-input-label">输入数量 (英文逗号分隔)：</label>
+                                <input type="text" id="batch-input" class="batch-input-field" placeholder="例如: 0,1,2,0,0,4,1,0,0,1,0,1" inputmode="numeric" pattern="[0-9,]*">
                                 <div class="batch-input-count">共 <span id="piece-count">0</span> 个碎片</div>
                             </div>
                             <div class="batch-input-example">
-                                <strong>输入说明：</strong> 输入用逗号、空格或短横线分隔的数字，0代表未拥有，1代表已拥有但是不可赠送。<br>
+                                <strong>输入说明：</strong> 输入用逗号分隔的数字，按碎片1到碎片12的顺序，表示每个碎片的拥有数量。0代表未拥有，1代表已拥有但是不可赠送，2代表可赠送1。
                             </div>
                             <div class="batch-input-actions">
                                 <button id="btn-apply-batch" class="btn btn-primary">应用输入</button>
-                                <button id="btn-fill-current" class="btn">载入现有数据</button>
+                                <button id="btn-fill-current" class="btn">填充当前值</button>
                                 <button id="btn-clear-input" class="btn btn-danger">清空</button>
                             </div>
                         </div>
@@ -750,7 +874,7 @@
                             </button>
                             <span id="global-view-title">全局碎片视图</span>
                         </h2>
-                        <!-- 保留：全局碎片视图的星级筛选器 -->
+                        <!-- 新增：全局碎片视图的星级筛选器 -->
                         <div id="global-star-filters" class="filters">
                             <button class="filter-btn active" data-star="0">全部</button>
                             <button class="filter-btn" data-star="1">★ 1星</button>
@@ -793,7 +917,12 @@
 
         <footer>
             <p>数据记得导出，刷新页面会丢失</p>
-            <a href="https://1258740148.github.io/trainer23/" target="_blank">点击跳转到兵种计算</a>
+        </footer>
+        <footer>
+            <a href="https://1258740148.github.io/trainer23/" target="_blank" rel="noopener noreferrer" style="color: rgb(255, 94, 0);">点击跳转到兵种计算</a>
+        </footer>        
+        <footer>
+            <a href="https://1258740148.github.io/trainer6/" target="_blank" rel="noopener noreferrer" style="color: rgb(141, 0, 0);">点击跳转到碎片交换</a>
         </footer>
     </div>
 
@@ -1202,19 +1331,16 @@
                     card.className = 'card image-card';
                     card.dataset.imageId = image.id;
                     card.innerHTML = `
-                        <div class="image-icon">🖼️</div>
                         <div class="card-title">${image.name}</div>
-                        <div class="image-stats">
-                            <div>规格: ${image.rows} × ${image.cols}</div>
-                            <div>可赠送: ${stats.giveaway}</div>
-                            ${this.renderProgressBar(stats.collected, stats.total)}
-                        </div>
+                        <div>规格: ${image.rows} × ${image.cols}</div>
+                        <div>可赠送: ${stats.giveaway}</div>
+                        ${this.renderProgressBar(stats.collected, stats.total)}
                     `;
                     container.appendChild(card);
                 });
             }
             
-            // 渲染碎片网格视图 (简化版，仅显示提示和输入区)
+            // 渲染碎片网格视图
             renderPieceGridView() {
                 const theme = this.state.getCurrentTheme();
                 const image = this.state.getCurrentImage();
@@ -1224,17 +1350,47 @@
                 }
                 
                 document.getElementById('current-image-name').textContent = image.name;
+                const pieces = this.state.getFilteredPieces();
                 const container = document.querySelector('#piece-grid-view .cards-container');
+                container.innerHTML = '';
                 
-                // 不再渲染碎片卡片，直接显示操作提示
-                container.innerHTML = `
-                    <p>当前图片：<strong>${image.name}</strong></p>
-                    <p>此图片共有 <strong>${image.pieces.length}</strong> 个碎片。</p>
-                    <p>请在下方输入框中，按顺序输入每个碎片的拥有数量。</p>
-                    <p><small>（输入格式示例：1,0,2,0,0,1 或 1 0 2 0 0 1 或 1-0-2-0-0-1）</small></p>
-                `;
+                if (!pieces || pieces.length === 0) {
+                    container.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:2rem;">没有找到碎片数据</p>';
+                    return;
+                }
                 
-                // 更新批量输入区域的碎片数量显示和提示
+                pieces.forEach(piece => {
+                    const isCollected = piece.count > 0;
+                    const giveaway = Math.max(0, piece.count - 1);
+                    const star = piece.star || Constants.STAR_MIN;
+                    
+                    const card = document.createElement('div');
+                    card.className = `card piece-card ${isCollected ? 'collected' : 'uncollected'}`;
+                    card.dataset.pieceId = piece.id;
+                    card.dataset.themeId = this.state.currentThemeId;
+                    card.dataset.imageId = this.state.currentImageId;
+                    card.innerHTML = `
+                        <div class="piece-id">#${piece.id}</div>
+                        <div class="piece-name">${piece.name}</div>
+                        <div class="piece-stars">${this.renderStars(star)}</div>
+                        <div class="piece-counts">
+                            <div class="count-item">
+                                <div class="count-label">拥有</div>
+                                <div class="count-value count-owned">${piece.count}</div>
+                            </div>
+                            <div class="count-item">
+                                <div class="count-label">可赠送</div>
+                                <div class="count-value count-giveaway">${giveaway}</div>
+                            </div>
+                        </div>
+                        <div class="piece-status">${isCollected ? '✓' : '?'}</div>
+                        <div class="click-zone zone-left count-decrease-zone">-</div>
+                        <div class="click-zone zone-right count-increase-zone">+</div>
+                    `;
+                    container.appendChild(card);
+                });
+                
+                // 更新批量输入区域的碎片数量显示
                 this.updateBatchInputInfo();
             }
             
@@ -1244,11 +1400,9 @@
                 if (image) {
                     document.getElementById('piece-count').textContent = image.pieces.length;
                     
-                    // 更新输入框提示，展示多种格式示例
+                    // 更新输入框提示
                     const input = document.getElementById('batch-input');
-                    // 生成一个简单的示例序列，如 0,1,0,2,...
-                    const exampleArray = Array.from({length: image.pieces.length}, (_, i) => i % 3);
-                    input.placeholder = `例如: ${exampleArray.join(',')} 或 ${exampleArray.join(' ')} 或 ${exampleArray.join('-')}`;
+                    input.placeholder = `例如: ${Array(image.pieces.length).fill('0').map((_, i) => i % 3).join(',')}`;
                 }
             }
             
@@ -1355,6 +1509,7 @@
             switchView(viewName, filterType = null) {
                 // 隐藏所有视图
                 document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+                document.getElementById('star-filters').classList.add('hidden');
                 
                 // 更新状态
                 this.state.currentView = viewName;
@@ -1364,8 +1519,12 @@
                 
                 // 重置筛选器
                 if (viewName === Constants.VIEWS.PIECE) {
-                    // 碎片网格视图 - 已移除星级筛选器，只重置筛选状态
+                    // 碎片网格视图
+                    document.querySelectorAll('#star-filters .filter-btn').forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.star === '0');
+                    });
                     this.state.starFilter = 0;
+                    document.getElementById('star-filters').classList.remove('hidden');
                 } else if (viewName === Constants.VIEWS.GLOBAL) {
                     // 全局碎片视图
                     document.querySelectorAll('#global-star-filters .filter-btn').forEach(btn => {
@@ -1386,6 +1545,7 @@
                         break;
                     case Constants.VIEWS.PIECE:
                         document.getElementById('piece-grid-view').classList.remove('hidden');
+                        document.getElementById('star-filters').classList.remove('hidden');
                         this.renderPieceGridView();
                         break;
                     case Constants.VIEWS.GLOBAL:
@@ -1432,6 +1592,13 @@
                         this.handleBatchInputApply();
                     }
                 });
+                
+                // 触摸设备优化：防止滚动干扰
+                document.addEventListener('touchstart', (e) => {
+                    if (e.target.classList.contains('click-zone')) {
+                        e.preventDefault(); // 防止触摸时滚动
+                    }
+                }, { passive: false });
             }
             
             handleClick(e) {
@@ -1448,7 +1615,7 @@
                     return;
                 }
                 
-                // 星级筛选器按钮（仅处理全局碎片视图的筛选器）
+                // 星级筛选器按钮
                 if (target.classList.contains('filter-btn')) {
                     this.handleStarFilterClick(target);
                     return;
@@ -1508,7 +1675,17 @@
                 const star = parseInt(filterBtn.dataset.star);
                 
                 // 根据当前视图更新对应的筛选器
-                if (this.state.currentView === Constants.VIEWS.GLOBAL) {
+                if (this.state.currentView === Constants.VIEWS.PIECE) {
+                    this.state.starFilter = star;
+                    // 更新当前视图的筛选器按钮状态
+                    const container = document.getElementById('star-filters');
+                    if (container) {
+                        container.querySelectorAll('.filter-btn').forEach(btn => {
+                            btn.classList.toggle('active', parseInt(btn.dataset.star) === star);
+                        });
+                    }
+                    this.view.renderPieceGridView();
+                } else if (this.state.currentView === Constants.VIEWS.GLOBAL) {
                     this.state.globalStarFilter = star;
                     // 更新全局视图的筛选器按钮状态
                     const container = document.getElementById('global-star-filters');
@@ -1519,7 +1696,6 @@
                     }
                     this.view.renderGlobalPieceView();
                 }
-                // 注：已移除碎片管理视图的星级筛选器，因此不再处理Constants.VIEWS.PIECE的情况
             }
             
             handleCardClick(card, event) {
@@ -1532,7 +1708,6 @@
                     this.state.currentImageId = imageId;
                     this.view.switchView(Constants.VIEWS.PIECE);
                 } else if (card.classList.contains('piece-card')) {
-                    // 只在全局碎片视图中处理碎片卡片的点击
                     this.handlePieceCardClick(card, event);
                 }
             }
@@ -1559,9 +1734,13 @@
                 // 更新碎片数量
                 const result = this.state.updatePieceCount(themeId, imageId, pieceId, delta);
                 
-                if (result) {
-                    // 重新渲染全局碎片视图
-                    this.view.renderGlobalPieceView();
+if (result) {
+                    // 根据当前视图重新渲染
+                    if (this.state.currentView === Constants.VIEWS.GLOBAL) {
+                        this.view.renderGlobalPieceView();
+                    } else {
+                        this.view.renderPieceGridView();
+                    }
                 }
             }
             
@@ -1575,14 +1754,11 @@
                     return;
                 }
                 
-                // 增强解析：支持逗号、空格、短横线及其混合作为分隔符
-                // 1. 将多种分隔符统一替换为逗号
-                const normalizedInput = inputValue.replace(/[,\s-]+/g, ',');
-                // 2. 按逗号分割，并处理可能的首尾分隔符
-                const numberStrings = normalizedInput.split(',').filter(str => str !== '');
-                // 3. 转换为数字
-                const counts = numberStrings.map(str => {
-                    const parsed = parseInt(str.trim(), 10);
+                // 解析输入的数字
+                const counts = inputValue.split(',').map(num => {
+                    const trimmed = num.trim();
+                    // 确保是有效的非负整数
+                    const parsed = parseInt(trimmed);
                     return isNaN(parsed) ? 0 : Math.max(0, parsed);
                 });
                 
@@ -1622,8 +1798,7 @@
                     albums: this.state.albums,
                     meta: {
                         exportedAt: new Date().toISOString(),
-                        app: '碎片收集统计与互换系统',
-                        version: '2.0'  // 添加版本号，确保兼容性
+                        app: '碎片收集统计与互换系统'
                     }
                 };
                 
@@ -1654,39 +1829,14 @@
                 reader.onload = (e) => {
                     try {
                         const imported = JSON.parse(e.target.result);
-                        
-                        // 兼容性检查：确保导入的数据结构正确
                         if (!imported.albums || !Array.isArray(imported.albums)) {
-                            // 尝试检查是否是旧格式
-                            if (imported.themes || imported.images) {
-                                throw new Error('数据格式不兼容，请使用新的数据格式导入。');
-                            }
                             throw new Error('无效的数据格式：缺少必要的 albums 数组');
-                        }
-                        
-                        // 验证导入的数据结构
-                        let isValid = true;
-                        if (imported.albums.length !== 4) {
-                            isValid = false;
-                        } else {
-                            // 检查每个主题是否有9个图片
-                            for (const theme of imported.albums) {
-                                if (!theme.images || theme.images.length !== 9) {
-                                    isValid = false;
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        if (!isValid) {
-                            alert('导入的数据结构不正确，可能已损坏。');
-                            return;
                         }
                         
                         if (confirm('确定要导入新数据吗？当前数据将被覆盖。')) {
                             this.state.albums = imported.albums;
                             this.view.switchView(Constants.VIEWS.THEME);
-                            alert(`数据导入成功！\n共导入 ${imported.albums.length} 个主题的数据。`);
+                            alert('数据导入成功！');
                         }
                     } catch (error) {
                         alert(`导入失败：${error.message}`);
@@ -1715,41 +1865,6 @@
             
             // 初始渲染
             viewRenderer.switchView(Constants.VIEWS.THEME);
-            
-            // 尝试从本地存储加载数据
-            try {
-                const savedData = localStorage.getItem('fragmentCollectionData');
-                if (savedData) {
-                    const imported = JSON.parse(savedData);
-                    if (imported.albums && Array.isArray(imported.albums)) {
-                        // 自动加载上次保存的数据
-                        if (confirm('检测到上次保存的数据，是否自动加载？')) {
-                            stateManager.albums = imported.albums;
-                            viewRenderer.renderThemeListView();
-                            alert('自动加载完成！');
-                        }
-                    }
-                }
-            } catch (e) {
-                console.log('无本地存储数据或数据损坏');
-            }
-            
-            // 添加自动保存功能
-            window.addEventListener('beforeunload', () => {
-                try {
-                    const data = {
-                        albums: stateManager.albums,
-                        meta: {
-                            savedAt: new Date().toISOString(),
-                            app: '碎片收集统计与互换系统',
-                            version: '2.0'
-                        }
-                    };
-                    localStorage.setItem('fragmentCollectionData', JSON.stringify(data));
-                } catch (e) {
-                    console.log('自动保存失败');
-                }
-            });
             
             console.log('碎片收集统计与互换系统已初始化完成');
         });
