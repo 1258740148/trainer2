@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>碎片收集统计</title>
+    <style>
+        /* === 基础样式 === */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        :root {
+            --primary: #4a6fa5;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --bg-light: #f0f2f5;
+            --text-dark: #2c3e50;
+            --card-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --max-width: 1200px;
+            --padding: 20px;
+            --card-gap: 20px;
+            --border-radius: 10px;
+            --card-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+            padding: var(--padding);
+        }
+        
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        header h1 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        header p {
+            color: #666;
+        }
+        
+        /* === 新增：全局过滤按钮 === */
+        .global-filters {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .global-filter-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .global-filter-btn.uncollected {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .global-filter-btn.giveaway {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .global-filter-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* === 视图容器 === */
+        .view {
+            display: block;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .view-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        /* === 卡片容器布局 === */
+        .cards-container {
+            display: grid;
+            gap: var(--card-gap);
+        }
+        
+        #theme-list-view .cards-container {
+            grid-template-columns: 1fr;
+        }
+        
+        #image-list-view .cards-container {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        #piece-grid-view .cards-container {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        /* === 新增：全局碎片视图 === */
+        #global-piece-view .cards-container {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        /* === 卡片通用样式 === */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            padding: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid transparent;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+        
+        /* === 主题卡片 === */
+        .theme-card {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .theme-thumbnail {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), #6a93d8);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .theme-info {
+            flex-grow: 1;
+        }
+        
+        .theme-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* === 图片卡片 === */
+        .image-card .card-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* === 碎片卡片 === */
+        .piece-card {
+            text-align: center;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            user-select: none;
+        }
+        
+        .piece-card.collected {
+            border-color: var(--success);
+        }
+        
+        .piece-card.uncollected {
+            filter: grayscale(0.8);
+            border-color: var(--border-color);
+        }
+        
+        .piece-id {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: #eee;
+            color: #666;
+            font-size: 0.8rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .piece-name {
+            font-weight: bold;
+            margin: 0.5rem 0;
+            font-size: 1.1rem;
+        }
+        
+        /* 新增：全局碎片视图中的来源信息 */
+        .piece-source {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 4px;
+        }
+        
+        .piece-stars {
+            color: var(--warning);
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .piece-counts {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .count-item {
+            text-align: center;
+        }
+        
+        .count-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .count-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .count-owned {
+            color: var(--primary);
+        }
+        
+        .count-giveaway {
+            color: var(--success);
+        }
+        
+        .piece-status {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 1.5rem;
+        }
+        
+        .collected .piece-status {
+            color: var(--success);
+        }
+        
+        .uncollected .piece-status {
+            color: #ccc;
+        }
+        
+        /* === 左右两等分点击区域 === */
+        .click-zone {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 2;
+        }
+        
+        .piece-card:hover .click-zone {
+            opacity: 0.7;
+        }
+        
+        .zone-left {
+            left: 0;
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+        }
+        
+        .zone-right {
+            right: 0;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+        
+        .count-decrease-zone {
+            background-color: rgba(244, 67, 54, 0.5);
+            color: white;
+        }
+        
+        .count-decrease-zone:hover {
+            background-color: rgba(244, 67, 54, 0.7);
+        }
+        
+        .count-increase-zone {
+            background-color: rgba(76, 175, 80, 0.5);
+            color: white;
+        }
+        
+        .count-increase-zone:hover {
+            background-color: rgba(76, 175, 80, 0.7);
+        }
+        
+        /* === 进度条 === */
+        .progress-container {
+            margin-top: 0.75rem;
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: var(--success);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        /* === 按钮与筛选器 === */
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a5f95;
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .btn:hover {
+            filter: brightness(0.95);
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn svg {
+            width: 1.2em;
+            height: 1.2em;
+        }
+        
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .filter-btn {
+            padding: 0.4rem 0.8rem;
+            background-color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .filter-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .data-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        /* === 页脚 === */
+        footer {
+            margin-top: 3rem;
+            text-align: center;
+            color: #888;
+            font-size: 0.9rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧩 碎片收集统计</h1>
+            <p>仅提供4个主题的统计，对照游戏内图册，统计完成后再查看未收录或可赠送，然后跟盟友互赠，统计完成后记得保存，下次再导入核对更新</p>
+        </header>
+
+        <!-- 新增：全局过滤按钮 -->
+        <div class="global-filters">
+            <button id="filter-uncollected" class="global-filter-btn uncollected">
+                <svg fill="currentColor" viewBox="0 0 16 16" style="width: 1.2em; height: 1.2em;">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
+                查看未收录
+            </button>
+            <button id="filter-giveaway" class="global-filter-btn giveaway">
+                <svg fill="currentColor" viewBox="0 0 16 16" style="width: 1.2em; height: 1.2em;">
+                    <path d="M3 2.5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1 5 0v.006c0 .07 0 .27-.038.494H15a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1v7.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5V7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h2.038A2.968 2.968 0 0 1 3 2.506V2.5zm1.068.5H7v-.5a1.5 1.5 0 1 0-3 0c0 .085.002.274.045.43a.522.522 0 0 0 .023.07zM9 3h2.932a.56.56 0 0 0 .023-.07c.043-.156.045-.345.045-.43a1.5 1.5 0 0 0-3 0V3zM1 4v2h6V4H1zm8 0v2h6V4H9zm5 3H9v8h4.5a.5.5 0 0 0 .5-.5V7zm-7 8V7H2v7.5a.5.5 0 0 0 .5.5H7z"/>
+                </svg>
+                查看可赠送
+            </button>
+        </div>
+
+        <!-- 星级筛选器 -->
+        <div id="star-filters" class="filters hidden">
+            <button class="filter-btn active" data-star="0">全部</button>
+            <button class="filter-btn" data-star="1">★ 1星</button>
+            <button class="filter-btn" data-star="2">★★ 2星</button>
+            <button class="filter-btn" data-star="3">★★★ 3星</button>
+            <button class="filter-btn" data-star="4">★★★★ 4星</button>
+            <button class="filter-btn" data-star="5">★★★★★ 5星</button>
+        </div>
+
+        <main>
+            <!-- 视图容器 -->
+            <div id="view-container">
+                <!-- 视图1: 主题列表 -->
+                <div id="theme-list-view" class="view">
+                    <div class="view-header">
+                        <h2>📚 主题列表</h2>
+                    </div>
+                    <div class="cards-container"></div>
+                </div>
+
+                <!-- 视图2: 图片列表 -->
+                <div id="image-list-view" class="view hidden">
+                    <div class="view-header">
+                        <h2>
+                            <button id="back-to-themes" class="btn">
+                                <svg fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M12 8a.5.5 0 0 1-.5.5H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H11.5A.5.5 0 0 1 12 8z"/>
+                                </svg>
+                                返回主题列表
+                            </button>
+                            <span id="current-theme-name">主题名称</span> - 图片列表
+                        </h2>
+                    </div>
+                    <div class="cards-container"></div>
+                </div>
+
+                <!-- 视图3: 碎片网格 -->
+                <div id="piece-grid-view" class="view hidden">
+                    <div class="view-header">
+                        <h2>
+                            <button id="back-to-images" class="btn">
+                                <svg fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M12 8a.5.5 0 0 1-.5.5H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H11.5A.5.5 0 0 1 12 8z"/>
+                                </svg>
+                                返回图片列表
+                            </button>
+                            <span id="current-image-name">图片名称</span> - 碎片网格
+                        </h2>
+                    </div>
+                    <div class="cards-container"></div>
+                </div>
+
+                <!-- 新增：全局碎片视图 -->
+                <div id="global-piece-view" class="view hidden">
+                    <div class="view-header">
+                        <h2>
+                            <button id="back-to-main" class="btn">
+                                <svg fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M12 8a.5.5 0 0 1-.5.5H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H11.5A.5.5 0 0 1 12 8z"/>
+                                </svg>
+                                返回主界面
+                            </button>
+                            <span id="global-view-title">全局碎片视图</span>
+                        </h2>
+                    </div>
+                    <div class="cards-container"></div>
+                </div>
+            </div>
+
+            <!-- 数据管理操作区 -->
+            <div class="data-actions">
+                <button id="btn-export" class="btn btn-primary">
+                    <svg fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                    </svg>
+                    导出数据
+                </button>
+                <label for="file-import" class="btn btn-success" style="cursor:pointer;">
+                    <svg fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                    </svg>
+                    导入数据
+                    <input type="file" id="file-import" accept=".json" style="display: none;">
+                </label>
+                <button id="btn-reset" class="btn btn-danger">
+                    <svg fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                        <path d="M8 4.466V.534a.5.5 0 0 1 .821-.385l2.12 1.635A.5.5 0 0 1 10.5 2.5v3a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5z"/>
+                    </svg>
+                    重置数据
+                </button>
+            </div>
+        </main>
+
+        <footer>
+            <p>数据记得导出，刷新页面会丢失</p>
+            <a href="https://1258740148.github.io/trainer23/" target="_blank">点击跳转到兵种计算</a>
+        </footer>
+    </div>
+
+    <script>
+        // ============================================
+        // 常量定义
+        // ============================================
+        const Constants = {
+            THEME_NAMES: ["战火史诗", "奇妙历险", "地心探险", "自然之力"],
+            IMAGE_NAMES: [
+                "皇家兵工厂", "战场王者", "奥利哈钢", "王者之城", "飞行家的乐园", "伟大的博弈", "峡谷会战", "英雄的荣耀", "盛大的欢宴",
+                "钓鱼锦标赛", "除雪小分队", "掠夺者", "红发的乔伊", "女王崛起", "猎隼兵团", "赏金猎人", "流浪商人", "雪原大冒险",
+                "神秘裂谷", "地下世界", "矿洞历险", "幻光蕈林", "熔岩锻炉", "地下住民", "秘密计划", "大地之心", "深渊的回响",
+                "自然之友", "少女与野兽", "野性之力", "野兽军团", "宠物盟友", "驯兽大师", "奇异助力", "喀莎的小烦恼", "百兽之王"
+            ],
+            VIEWS: {
+                THEME: 'theme',
+                IMAGE: 'image',
+                PIECE: 'piece',
+                GLOBAL: 'global'
+            },
+            FILTER_TYPES: {
+                UNCOLLECTED: 'uncollected',
+                GIVEAWAY: 'giveaway'
+            },
+            // 每个主题下的9个图片的碎片数量
+            PIECE_COUNTS: [12, 15, 15, 15, 15, 18, 18, 18, 18],
+            // 每个图片的星级配置
+            STAR_CONFIGS: [
+                // 主题1: 战火史诗
+                [
+                    [1,1,1,2,2,2,3,3,3,4,4,4],
+                    [1,1,1,2,2,2,2,2,3,3,3,3,4,4,5],
+                    [1,1,1,2,2,2,2,2,3,3,3,3,4,4,5],
+                    [1,1,1,2,2,2,2,3,3,3,3,4,4,5,5],
+                    [1,1,1,2,2,2,3,3,3,4,4,4,5,5,5],
+                    [1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5],
+                    [1,1,2,2,2,3,3,3,4,4,4,4,4,5,5,5,5,5],
+                    [2,2,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,5],
+                    [2,2,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,5]
+                ],
+                // 主题2: 奇妙历险
+                [
+                    [1,1,1,2,2,2,3,3,3,4,4,4],
+                    [1,1,1,2,2,2,2,2,3,3,3,3,4,4,5],
+                    [1,1,1,2,2,2,2,2,3,3,3,3,4,4,5],
+                    [1,1,1,2,2,2,2,3,3,3,3,4,4,5,5],
+                    [1,1,1,2,2,2,3,3,3,4,4,4,5,5,5],
+                    [1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5],
+                    [1,1,2,2,2,3,3,3,4,4,4,4,4,5,5,5,5,5],
+                    [2,2,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,5],
+                    [2,2,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,5]
+                ],
+                // 主题3: 地心探险
+                [
+                    [1,1,1,2,2,2,3,3,3,4,4,4],
+                    [1,1,2,2,3,3,3,3,4,4,4,4,4,4,5],
+                    [1,1,1,2,2,2,2,2,3,3,3,3,4,4,5],
+                    [1,1,1,2,2,2,2,3,3,3,3,4,4,5,5],
+                    [1,1,1,2,2,2,3,3,3,4,4,4,5,5,5],
+                    [1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5],
+                    [1,2,2,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5],
+                    [1,2,2,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5],
+                    [2,2,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,5]
+                ],
+                // 主题4: 自然之力
+                [
+                    [1,1,1,2,2,2,3,3,3,4,4,4],
+                    [1,1,1,2,2,2,2,2,3,3,3,3,4,4,5],
+                    [1,1,2,2,3,3,3,3,4,4,4,4,4,4,5],
+                    [1,1,1,2,2,2,2,3,3,3,3,4,4,5,5],
+                    [1,1,1,2,2,2,3,3,3,4,4,4,5,5,5],
+                    [1,1,2,2,2,3,3,3,4,4,4,4,4,5,5,5,5,5],
+                    [1,1,2,2,2,3,3,3,4,4,4,4,4,5,5,5,5,5],
+                    [2,2,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,5],
+                    [1,2,2,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5]
+                ]
+            ],
+            STAR_MIN: 1,
+            STAR_MAX: 5
+        };
+
+        // ============================================
+        // 状态管理类
+        // ============================================
+        class CollectionState {
+            constructor() {
+                this.reset();
+            }
+            
+            // 重置所有数据
+            reset() {
+                this.currentView = Constants.VIEWS.THEME;
+                this.currentThemeId = null;
+                this.currentImageId = null;
+                this.starFilter = 0;
+                this.globalFilter = null;
+                this.albums = this.generateInitialData();
+            }
+            
+            // 生成初始数据
+            generateInitialData() {
+                const albums = [];
+                
+                for (let themeId = 1; themeId <= 4; themeId++) {
+                    const theme = {
+                        id: themeId,
+                        name: Constants.THEME_NAMES[themeId - 1] || `主题${themeId}`,
+                        images: []
+                    };
+                    
+                    // 当前主题的星级配置
+                    const themeStarConfig = Constants.STAR_CONFIGS[themeId - 1];
+                    
+                    for (let imgId = 1; imgId <= 9; imgId++) {
+                        const pieceCount = Constants.PIECE_COUNTS[imgId - 1];
+                        
+                        // 计算行列数（行数固定为3，列数根据碎片数量计算）
+                        const rows = 3;
+                        const cols = pieceCount / rows;
+                        
+                        const pieces = [];
+                        
+                        // 当前图片的星级配置
+                        const imageStarConfig = themeStarConfig[imgId - 1];
+                        
+                        for (let pieceId = 1; pieceId <= pieceCount; pieceId++) {
+                            // 使用配置的星级
+                            const star = imageStarConfig[pieceId - 1] || 1;
+                            
+                            pieces.push({
+                                id: pieceId,
+                                name: `碎片${pieceId}`,
+                                count: 0,
+                                star: star
+                            });
+                        }
+                        
+                        // 计算图片名称的索引
+                        const imageNameIndex = (themeId - 1) * 9 + (imgId - 1);
+                        const imageName = Constants.IMAGE_NAMES[imageNameIndex] || `图片${imgId}`;
+                        
+                        theme.images.push({
+                            id: imgId,
+                            name: imageName,
+                            rows: rows,
+                            cols: cols,
+                            pieces: pieces
+                        });
+                    }
+                    albums.push(theme);
+                }
+                return albums;
+            }
+            
+            // 计算全局统计
+            calculateStats() {
+                let totalPieces = 0;
+                let collectedPieces = 0;
+                let giveawayPieces = 0;
+                
+                this.albums.forEach(theme => {
+                    theme.images.forEach(image => {
+                        image.pieces.forEach(piece => {
+                            totalPieces++;
+                            if (piece.count > 0) collectedPieces++;
+                            giveawayPieces += Math.max(0, piece.count - 1);
+                        });
+                    });
+                });
+                
+                return {
+                    totalPieces,
+                    collectedPieces,
+                    giveawayPieces
+                };
+            }
+            
+            // 获取未收录的碎片
+            getUncollectedPieces() {
+                const pieces = [];
+                this.albums.forEach(theme => {
+                    theme.images.forEach(image => {
+                        image.pieces.forEach(piece => {
+                            if (piece.count === 0) {
+                                pieces.push({
+                                    ...piece,
+                                    themeId: theme.id,
+                                    themeName: theme.name,
+                                    imageId: image.id,
+                                    imageName: image.name
+                                });
+                            }
+                        });
+                    });
+                });
+                return pieces;
+            }
+            
+            // 获取可赠送的碎片
+            getGiveawayPieces() {
+                const pieces = [];
+                this.albums.forEach(theme => {
+                    theme.images.forEach(image => {
+                        image.pieces.forEach(piece => {
+                            if (piece.count > 1) {
+                                pieces.push({
+                                    ...piece,
+                                    themeId: theme.id,
+                                    themeName: theme.name,
+                                    imageId: image.id,
+                                    imageName: image.name,
+                                    giveawayCount: piece.count - 1
+                                });
+                            }
+                        });
+                    });
+                });
+                return pieces;
+            }
+            
+            // 获取当前主题
+            getCurrentTheme() {
+                if (!this.currentThemeId) return null;
+                return this.albums.find(t => t.id === this.currentThemeId);
+            }
+            
+            // 获取当前图片
+            getCurrentImage() {
+                const theme = this.getCurrentTheme();
+                if (!theme || !this.currentImageId) return null;
+                return theme.images.find(img => img.id === this.currentImageId);
+            }
+            
+            // 获取过滤后的碎片列表
+            getFilteredPieces() {
+                const image = this.getCurrentImage();
+                if (!image) return [];
+                if (this.starFilter === 0) {
+                    return image.pieces;
+                } else {
+                    return image.pieces.filter(p => p.star === this.starFilter);
+                }
+            }
+            
+            // 主题统计
+            getThemeStats(themeId) {
+                const theme = this.albums.find(t => t.id === themeId);
+                if (!theme) return null;
+                let total = 0, collected = 0, giveaway = 0;
+                theme.images.forEach(img => {
+                    img.pieces.forEach(p => {
+                        total++;
+                        if (p.count > 0) collected++;
+                        giveaway += Math.max(0, p.count - 1);
+                    });
+                });
+                return { total, collected, giveaway };
+            }
+            
+            // 图片统计
+            getImageStats(themeId, imageId) {
+                const theme = this.albums.find(t => t.id === themeId);
+                if (!theme) return null;
+                const image = theme.images.find(img => img.id === imageId);
+                if (!image) return null;
+                let total = 0, collected = 0, giveaway = 0;
+                image.pieces.forEach(p => {
+                    total++;
+                    if (p.count > 0) collected++;
+                    giveaway += Math.max(0, p.count - 1);
+                });
+                return { total, collected, giveaway };
+            }
+            
+            // 更新碎片数量
+            updatePieceCount(themeId, imageId, pieceId, delta) {
+                const piece = this.findPiece(themeId, imageId, pieceId);
+                if (!piece) return false;
+                piece.count = Math.max(0, piece.count + delta);
+                return true;
+            }
+            
+            // 辅助方法：查找碎片
+            findPiece(themeId, imageId, pieceId) {
+                const theme = this.albums.find(t => t.id === themeId);
+                if (!theme) return null;
+                const image = theme.images.find(img => img.id === imageId);
+                if (!image) return null;
+                return image.pieces.find(p => p.id === pieceId);
+            }
+        }
+
+        // ============================================
+        // 视图渲染类
+        // ============================================
+        class ViewRenderer {
+            constructor(stateManager) {
+                this.state = stateManager;
+            }
+            
+            // 渲染星级
+            renderStars(star) {
+                if (!star || star < 1) star = 1;
+                if (star > 5) star = 5;
+                return '★'.repeat(star) + '☆'.repeat(5 - star);
+            }
+            
+            // 渲染进度条
+            renderProgressBar(collected, total) {
+                const percent = total > 0 ? Math.round((collected / total) * 100) : 0;
+                return `
+                    <div class="progress-container">
+                        <div class="progress-label">
+                            <span>${collected} / ${total}</span>
+                            <span>${percent}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 渲染主题列表视图
+            renderThemeListView() {
+                const container = document.querySelector('#theme-list-view .cards-container');
+                container.innerHTML = '';
+                
+                this.state.albums.forEach(theme => {
+                    const stats = this.state.getThemeStats(theme.id);
+                    const card = document.createElement('div');
+                    card.className = 'card theme-card';
+                    card.dataset.themeId = theme.id;
+                    card.innerHTML = `
+                        <div class="theme-thumbnail">${theme.id}</div>
+                        <div class="theme-info">
+                            <div class="theme-name">${theme.name}</div>
+                            <div>包含图片: ${theme.images.length} 张</div>
+                            <div>可赠送碎片: ${stats.giveaway}</div>
+                            ${this.renderProgressBar(stats.collected, stats.total)}
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+            
+            // 渲染图片列表视图
+            renderImageListView() {
+                const theme = this.state.getCurrentTheme();
+                if (!theme) {
+                    this.switchView(Constants.VIEWS.THEME);
+                    return;
+                }
+                
+                document.getElementById('current-theme-name').textContent = theme.name;
+                const container = document.querySelector('#image-list-view .cards-container');
+                container.innerHTML = '';
+                
+                theme.images.forEach(image => {
+                    const stats = this.state.getImageStats(theme.id, image.id);
+                    const card = document.createElement('div');
+                    card.className = 'card image-card';
+                    card.dataset.imageId = image.id;
+                    card.innerHTML = `
+                        <div class="card-title">${image.name}</div>
+                        <div>规格: ${image.rows} × ${image.cols}</div>
+                        <div>可赠送: ${stats.giveaway}</div>
+                        ${this.renderProgressBar(stats.collected, stats.total)}
+                    `;
+                    container.appendChild(card);
+                });
+            }
+            
+            // 渲染碎片网格视图
+            renderPieceGridView() {
+                const theme = this.state.getCurrentTheme();
+                const image = this.state.getCurrentImage();
+                if (!theme || !image) {
+                    this.switchView(Constants.VIEWS.IMAGE);
+                    return;
+                }
+                
+                document.getElementById('current-image-name').textContent = image.name;
+                const pieces = this.state.getFilteredPieces();
+                const container = document.querySelector('#piece-grid-view .cards-container');
+                container.innerHTML = '';
+                
+                if (!pieces || pieces.length === 0) {
+                    container.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:2rem;">没有找到碎片数据</p>';
+                    return;
+                }
+                
+                pieces.forEach(piece => {
+                    const isCollected = piece.count > 0;
+                    const giveaway = Math.max(0, piece.count - 1);
+                    const star = piece.star || Constants.STAR_MIN;
+                    
+                    const card = document.createElement('div');
+                    card.className = `card piece-card ${isCollected ? 'collected' : 'uncollected'}`;
+                    card.dataset.pieceId = piece.id;
+                    card.dataset.themeId = this.state.currentThemeId;
+                    card.dataset.imageId = this.state.currentImageId;
+                    card.innerHTML = `
+                        <div class="piece-id">#${piece.id}</div>
+                        <div class="piece-name">${piece.name}</div>
+                        <div class="piece-stars">${this.renderStars(star)}</div>
+                        <div class="piece-counts">
+                            <div class="count-item">
+                                <div class="count-label">拥有</div>
+                                <div class="count-value count-owned">${piece.count}</div>
+                            </div>
+                            <div class="count-item">
+                                <div class="count-label">可赠送</div>
+                                <div class="count-value count-giveaway">${giveaway}</div>
+                            </div>
+                        </div>
+                        <div class="piece-status">${isCollected ? '✓' : '?'}</div>
+                        <div class="click-zone zone-left count-decrease-zone">-</div>
+                        <div class="click-zone zone-right count-increase-zone">+</div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+            
+            // 渲染全局碎片视图
+            renderGlobalPieceView() {
+                const container = document.querySelector('#global-piece-view .cards-container');
+                container.innerHTML = '';
+                
+                let pieces = [];
+                let viewTitle = '';
+                
+                if (this.state.globalFilter === Constants.FILTER_TYPES.UNCOLLECTED) {
+                    pieces = this.state.getUncollectedPieces();
+                    viewTitle = '未收录的碎片';
+                } else if (this.state.globalFilter === Constants.FILTER_TYPES.GIVEAWAY) {
+                    pieces = this.state.getGiveawayPieces();
+                    viewTitle = '可赠送的碎片';
+                }
+                
+                document.getElementById('global-view-title').textContent = viewTitle;
+                
+                if (pieces.length === 0) {
+                    container.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:2rem;">没有找到符合条件的碎片</p>';
+                    return;
+                }
+                
+                pieces.forEach(piece => {
+                    const isCollected = piece.count > 0;
+                    const giveaway = Math.max(0, piece.count - 1);
+                    const star = piece.star || Constants.STAR_MIN;
+                    
+                    const card = document.createElement('div');
+                    card.className = `card piece-card ${isCollected ? 'collected' : 'uncollected'}`;
+                    card.dataset.pieceId = piece.id;
+                    card.dataset.themeId = piece.themeId;
+                    card.dataset.imageId = piece.imageId;
+                    card.innerHTML = `
+                        <div class="piece-id">#${piece.id}</div>
+                        <div class="piece-source">${piece.themeName} - ${piece.imageName}</div>
+                        <div class="piece-name">${piece.name}</div>
+                        <div class="piece-stars">${this.renderStars(star)}</div>
+                        <div class="piece-counts">
+                            <div class="count-item">
+                                <div class="count-label">拥有</div>
+                                <div class="count-value count-owned">${piece.count}</div>
+                            </div>
+                            <div class="count-item">
+                                <div class="count-label">可赠送</div>
+                                <div class="count-value count-giveaway">${giveaway}</div>
+                            </div>
+                        </div>
+                        <div class="piece-status">${isCollected ? '✓' : '?'}</div>
+                        <div class="click-zone zone-left count-decrease-zone">-</div>
+                        <div class="click-zone zone-right count-increase-zone">+</div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+            
+            // 切换视图
+            switchView(viewName, filterType = null) {
+                // 隐藏所有视图
+                document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+                document.getElementById('star-filters').classList.add('hidden');
+                
+                // 更新状态
+                this.state.currentView = viewName;
+                if (filterType) {
+                    this.state.globalFilter = filterType;
+                }
+                
+                // 重置筛选器
+                if (viewName === Constants.VIEWS.PIECE) {
+                    document.querySelectorAll('.filter-btn').forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.star === '0');
+                    });
+                    this.state.starFilter = 0;
+                }
+                
+                // 显示目标视图
+                switch(viewName) {
+                    case Constants.VIEWS.THEME:
+                        document.getElementById('theme-list-view').classList.remove('hidden');
+                        this.renderThemeListView();
+                        break;
+                    case Constants.VIEWS.IMAGE:
+                        document.getElementById('image-list-view').classList.remove('hidden');
+                        this.renderImageListView();
+                        break;
+                    case Constants.VIEWS.PIECE:
+                        document.getElementById('piece-grid-view').classList.remove('hidden');
+                        document.getElementById('star-filters').classList.remove('hidden');
+                        this.renderPieceGridView();
+                        break;
+                    case Constants.VIEWS.GLOBAL:
+                        document.getElementById('global-piece-view').classList.remove('hidden');
+                        this.renderGlobalPieceView();
+                        break;
+                }
+            }
+        }
+
+        // ============================================
+        // 事件处理器
+        // ============================================
+        class EventHandler {
+            constructor(stateManager, viewRenderer) {
+                this.state = stateManager;
+                this.view = viewRenderer;
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                // 主事件委托
+                document.addEventListener('click', (e) => this.handleClick(e));
+                
+                // 文件导入
+                document.getElementById('file-import').addEventListener('change', (e) => this.handleFileImport(e));
+            }
+            
+            handleClick(e) {
+                const target = e.target;
+                
+                // 全局过滤按钮
+                if (target.id === 'filter-uncollected' || target.closest('#filter-uncollected')) {
+                    this.view.switchView(Constants.VIEWS.GLOBAL, Constants.FILTER_TYPES.UNCOLLECTED);
+                    return;
+                }
+                
+                if (target.id === 'filter-giveaway' || target.closest('#filter-giveaway')) {
+                    this.view.switchView(Constants.VIEWS.GLOBAL, Constants.FILTER_TYPES.GIVEAWAY);
+                    return;
+                }
+                
+                // 筛选器按钮
+                if (target.classList.contains('filter-btn')) {
+                    this.handleFilterClick(target);
+                    return;
+                }
+                
+                // 导航按钮
+                if (target.id === 'back-to-themes' || target.closest('#back-to-themes')) {
+                    this.view.switchView(Constants.VIEWS.THEME);
+                    return;
+                }
+                
+                if (target.id === 'back-to-images' || target.closest('#back-to-images')) {
+                    this.view.switchView(Constants.VIEWS.IMAGE);
+                    return;
+                }
+                
+                if (target.id === 'back-to-main' || target.closest('#back-to-main')) {
+                    this.view.switchView(Constants.VIEWS.THEME);
+                    return;
+                }
+                
+                // 数据操作按钮
+                if (target.id === 'btn-export') {
+                    this.exportData();
+                    return;
+                }
+                
+                if (target.id === 'btn-reset') {
+                    this.resetData();
+                    return;
+                }
+                
+                // 卡片点击
+                const card = target.closest('.card');
+                if (card) {
+                    this.handleCardClick(card, e);
+                }
+            }
+            
+            handleFilterClick(filterBtn) {
+                const star = parseInt(filterBtn.dataset.star);
+                this.state.starFilter = star;
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                filterBtn.classList.add('active');
+                this.view.renderPieceGridView();
+            }
+            
+            handleCardClick(card, event) {
+                if (card.classList.contains('theme-card')) {
+                    const themeId = parseInt(card.dataset.themeId);
+                    this.state.currentThemeId = themeId;
+                    this.view.switchView(Constants.VIEWS.IMAGE);
+                } else if (card.classList.contains('image-card')) {
+                    const imageId = parseInt(card.dataset.imageId);
+                    this.state.currentImageId = imageId;
+                    this.view.switchView(Constants.VIEWS.PIECE);
+                } else if (card.classList.contains('piece-card')) {
+                    this.handlePieceCardClick(card, event);
+                }
+            }
+            
+            handlePieceCardClick(card, event) {
+                const pieceId = parseInt(card.dataset.pieceId);
+                const themeId = parseInt(card.dataset.themeId);
+                const imageId = parseInt(card.dataset.imageId);
+                
+                if (!themeId || !imageId) {
+                    console.error('无法更新碎片：缺少主题ID或图片ID');
+                    return;
+                }
+                
+                const rect = card.getBoundingClientRect();
+                const clickX = event.clientX - rect.left;
+                
+                // 判断点击的是左边还是右边区域
+                const isLeftHalf = clickX < rect.width / 2;
+                
+                // 确定增减量
+                const delta = isLeftHalf ? -1 : 1;
+                
+                // 更新碎片数量
+                const result = this.state.updatePieceCount(themeId, imageId, pieceId, delta);
+                
+                if (result) {
+                    // 根据当前视图重新渲染
+                    if (this.state.currentView === Constants.VIEWS.GLOBAL) {
+                        this.view.renderGlobalPieceView();
+                    } else {
+                        this.view.renderPieceGridView();
+                    }
+                }
+            }
+            
+            exportData() {
+                const data = {
+                    albums: this.state.albums,
+                    meta: {
+                        exportedAt: new Date().toISOString(),
+                        app: '碎片收集统计与互换系统'
+                    }
+                };
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `碎片收集数据_${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+            
+            resetData() {
+                if (confirm('确定要重置所有数据吗？这将清除所有收集记录并恢复初始状态。')) {
+                    this.state.reset();
+                    this.view.switchView(Constants.VIEWS.THEME);
+                    alert('数据重置成功！');
+                }
+            }
+            
+            handleFileImport(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        if (!imported.albums || !Array.isArray(imported.albums)) {
+                            throw new Error('无效的数据格式：缺少必要的 albums 数组');
+                        }
+                        
+                        if (confirm('确定要导入新数据吗？当前数据将被覆盖。')) {
+                            this.state.albums = imported.albums;
+                            this.view.switchView(Constants.VIEWS.THEME);
+                            alert('数据导入成功！');
+                        }
+                    } catch (error) {
+                        alert(`导入失败：${error.message}`);
+                    }
+                };
+                
+                reader.onerror = () => {
+                    alert('读取文件失败，请检查文件格式。');
+                };
+                
+                reader.readAsText(file);
+                event.target.value = ''; // 重置input
+            }
+        }
+
+        // ============================================
+        // 应用初始化
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化状态管理器和视图渲染器
+            const stateManager = new CollectionState();
+            const viewRenderer = new ViewRenderer(stateManager);
+            
+            // 初始化事件处理器
+            new EventHandler(stateManager, viewRenderer);
+            
+            // 初始渲染
+            viewRenderer.switchView(Constants.VIEWS.THEME);
+            
+            console.log('碎片收集统计与互换系统已初始化完成');
+        });
+    </script>
+</body>
+</html>
